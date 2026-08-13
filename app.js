@@ -239,6 +239,32 @@ function highlightWordAtPoint(event){
       caretRange.collapse(true);
     }
   }
+  if(!caretRange){
+    const paragraph=event.target.closest('.reading-paragraph p');
+    if(!paragraph) return;
+    const walker=document.createTreeWalker(paragraph,NodeFilter.SHOW_TEXT);
+    let candidate;
+    while((candidate=walker.nextNode())){
+      if(candidate.parentElement.closest('.reading-highlight')) continue;
+      const matches=candidate.nodeValue.matchAll(/[A-Za-z0-9'’-]+/g);
+      for(const match of matches){
+        const candidateRange=document.createRange();
+        candidateRange.setStart(candidate,match.index);
+        candidateRange.setEnd(candidate,match.index+match[0].length);
+        const hit=[...candidateRange.getClientRects()].some(rect=>
+          event.clientX>=rect.left-2&&event.clientX<=rect.right+2&&
+          event.clientY>=rect.top-2&&event.clientY<=rect.bottom+2
+        );
+        if(!hit) continue;
+        const mark=document.createElement('mark');
+        mark.className='reading-highlight';
+        mark.dataset.created=String(Date.now());
+        candidateRange.surroundContents(mark);
+        return;
+      }
+    }
+    return;
+  }
   if(!caretRange||caretRange.startContainer.nodeType!==Node.TEXT_NODE) return;
   const textNode=caretRange.startContainer;
   if(!readingText.contains(textNode.parentElement)||textNode.parentElement.closest('.reading-highlight')) return;
