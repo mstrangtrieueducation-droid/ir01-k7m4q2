@@ -186,6 +186,56 @@ passages.forEach((p,index)=>{
   passageEl.appendChild(article);
 });
 
+function selectionBelongsToReading(range){
+  const start=range.startContainer.nodeType===Node.TEXT_NODE?range.startContainer.parentElement:range.startContainer;
+  const end=range.endContainer.nodeType===Node.TEXT_NODE?range.endContainer.parentElement:range.endContainer;
+  return readingText.contains(start)&&readingText.contains(end);
+}
+
+function highlightReadingSelection(){
+  const selection=window.getSelection();
+  if(!selection||selection.isCollapsed||!selection.rangeCount) return;
+  const range=selection.getRangeAt(0);
+  if(!selectionBelongsToReading(range)) return;
+
+  const textNodes=[];
+  const walker=document.createTreeWalker(readingText,NodeFilter.SHOW_TEXT);
+  let node;
+  while((node=walker.nextNode())){
+    if(!node.nodeValue.trim()||node.parentElement.closest('.reading-highlight')) continue;
+    try{ if(range.intersectsNode(node)) textNodes.push(node); }catch(_error){}
+  }
+
+  textNodes.reverse().forEach(textNode=>{
+    let start=0,end=textNode.nodeValue.length;
+    if(textNode===range.startContainer) start=range.startOffset;
+    if(textNode===range.endContainer) end=range.endOffset;
+    if(start>=end) return;
+    const selectedRange=document.createRange();
+    selectedRange.setStart(textNode,start);
+    selectedRange.setEnd(textNode,end);
+    const mark=document.createElement('mark');
+    mark.className='reading-highlight';
+    mark.dataset.created=String(Date.now());
+    selectedRange.surroundContents(mark);
+  });
+  selection.removeAllRanges();
+}
+
+readingText.addEventListener('mouseup',()=>setTimeout(highlightReadingSelection,0));
+readingText.addEventListener('touchend',()=>setTimeout(highlightReadingSelection,350),{passive:true});
+readingText.addEventListener('click',event=>{
+  const mark=event.target.closest('.reading-highlight');
+  if(!mark||Date.now()-Number(mark.dataset.created||0)<350) return;
+  mark.replaceWith(document.createTextNode(mark.textContent));
+  readingText.normalize();
+});
+document.getElementById('clearHighlights').addEventListener('click',()=>{
+  readingText.querySelectorAll('.reading-highlight').forEach(mark=>mark.replaceWith(document.createTextNode(mark.textContent)));
+  readingText.normalize();
+  window.getSelection()?.removeAllRanges();
+});
+
 function updateAnswered(){
   const n=[...document.querySelectorAll('.paragraph-card select')].filter(x=>x.value).length;
   document.getElementById('answeredCount').textContent=`${n} / 7`;

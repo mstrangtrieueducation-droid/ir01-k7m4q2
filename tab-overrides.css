@@ -155,7 +155,13 @@
 .reading-pane,.questions-pane { overflow-y: auto; scrollbar-gutter: stable; }
 .reading-pane { padding: 34px 42px 70px; border-right: 4px solid #aeb6bc; }
 .reading-pane h2 { margin: 2px 0 26px; font: 700 30px/1.2 Arial,sans-serif; color: #20272d; letter-spacing: 0; }
+.highlight-guide { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin: -10px 0 24px; padding: 10px 12px; border: 1px solid #c9cfd3; background: #f4f5f6; color: #3e474e; font: 13px/1.45 Arial,sans-serif; }
+.highlight-guide button { flex: 0 0 auto; border: 1px solid #727b82; background: #fff; color: #20272d; min-height: 34px; padding: 0 12px; font: 700 12px Arial,sans-serif; cursor: pointer; }
+.highlight-guide button:hover,.highlight-guide button:focus-visible { background: #e7ebed; outline: 2px solid #1f5f88; outline-offset: 1px; }
 .reading-text { color: #111; font: 17px/1.62 Georgia,serif; }
+.reading-text::selection,.reading-text *::selection { background: #f4cc3d; color: #111; }
+.reading-highlight { background: #ffe16a; color: inherit; padding: 1px 0; cursor: pointer; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
+.reading-highlight:hover { background: #ffd43d; }
 .reading-paragraph { display: grid; grid-template-columns: 32px 1fr; gap: 10px; margin-bottom: 20px; }
 .reading-paragraph b { font: 700 17px Arial,sans-serif; }
 .reading-paragraph p { margin: 0; }
@@ -194,6 +200,8 @@
   .reading-pane,.questions-pane { overflow: visible; }
   .reading-pane { padding: 26px 18px 34px; border-right: 0; border-bottom: 4px solid #aeb6bc; }
   .reading-pane h2 { font-size: 25px; }
+  .highlight-guide { align-items: flex-start; margin-top: -6px; }
+  .highlight-guide span { max-width: 72%; }
   .reading-text { font-size: 16px; }
   .questions-pane { padding: 22px 14px 90px; }
   .computer-test-shell .grade-bar { position: sticky; bottom: 0; }
