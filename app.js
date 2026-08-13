@@ -223,6 +223,7 @@ function highlightReadingSelection(){
 }
 
 readingText.addEventListener('mouseup',()=>setTimeout(highlightReadingSelection,0));
+readingText.addEventListener('dblclick',()=>setTimeout(highlightReadingSelection,0));
 readingText.addEventListener('touchend',()=>setTimeout(highlightReadingSelection,350),{passive:true});
 readingText.addEventListener('click',event=>{
   const mark=event.target.closest('.reading-highlight');
