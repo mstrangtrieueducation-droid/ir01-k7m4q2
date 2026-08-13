@@ -192,6 +192,8 @@ function selectionBelongsToReading(range){
   return readingText.contains(start)&&readingText.contains(end);
 }
 
+let suppressReadingClickUntil=0;
+
 function highlightReadingSelection(){
   const selection=window.getSelection();
   if(!selection||selection.isCollapsed||!selection.rangeCount) return;
@@ -206,6 +208,7 @@ function highlightReadingSelection(){
     try{ if(range.intersectsNode(node)) textNodes.push(node); }catch(_error){}
   }
 
+  let highlightCount=0;
   textNodes.reverse().forEach(textNode=>{
     let start=0,end=textNode.nodeValue.length;
     if(textNode===range.startContainer) start=range.startOffset;
@@ -218,8 +221,42 @@ function highlightReadingSelection(){
     mark.className='reading-highlight';
     mark.dataset.created=String(Date.now());
     selectedRange.surroundContents(mark);
+    highlightCount++;
   });
+  if(highlightCount) suppressReadingClickUntil=Date.now()+400;
   selection.removeAllRanges();
+}
+
+function highlightWordAtPoint(event){
+  let caretRange=null;
+  if(document.caretRangeFromPoint){
+    caretRange=document.caretRangeFromPoint(event.clientX,event.clientY);
+  }else if(document.caretPositionFromPoint){
+    const position=document.caretPositionFromPoint(event.clientX,event.clientY);
+    if(position){
+      caretRange=document.createRange();
+      caretRange.setStart(position.offsetNode,position.offset);
+      caretRange.collapse(true);
+    }
+  }
+  if(!caretRange||caretRange.startContainer.nodeType!==Node.TEXT_NODE) return;
+  const textNode=caretRange.startContainer;
+  if(!readingText.contains(textNode.parentElement)||textNode.parentElement.closest('.reading-highlight')) return;
+  const text=textNode.nodeValue;
+  let offset=Math.min(caretRange.startOffset,text.length-1);
+  const isWordCharacter=character=>/[A-Za-z0-9'’-]/.test(character||'');
+  if(!isWordCharacter(text[offset])&&offset>0&&isWordCharacter(text[offset-1])) offset--;
+  if(!isWordCharacter(text[offset])) return;
+  let start=offset,end=offset+1;
+  while(start>0&&isWordCharacter(text[start-1])) start--;
+  while(end<text.length&&isWordCharacter(text[end])) end++;
+  const wordRange=document.createRange();
+  wordRange.setStart(textNode,start);
+  wordRange.setEnd(textNode,end);
+  const mark=document.createElement('mark');
+  mark.className='reading-highlight';
+  mark.dataset.created=String(Date.now());
+  wordRange.surroundContents(mark);
 }
 
 readingText.addEventListener('mouseup',()=>setTimeout(highlightReadingSelection,0));
@@ -227,9 +264,14 @@ readingText.addEventListener('dblclick',()=>setTimeout(highlightReadingSelection
 readingText.addEventListener('touchend',()=>setTimeout(highlightReadingSelection,350),{passive:true});
 readingText.addEventListener('click',event=>{
   const mark=event.target.closest('.reading-highlight');
-  if(!mark||Date.now()-Number(mark.dataset.created||0)<350) return;
-  mark.replaceWith(document.createTextNode(mark.textContent));
-  readingText.normalize();
+  if(mark){
+    if(Date.now()-Number(mark.dataset.created||0)<350) return;
+    mark.replaceWith(document.createTextNode(mark.textContent));
+    readingText.normalize();
+    return;
+  }
+  if(Date.now()<suppressReadingClickUntil||!window.getSelection()?.isCollapsed) return;
+  highlightWordAtPoint(event);
 });
 document.getElementById('clearHighlights').addEventListener('click',()=>{
   readingText.querySelectorAll('.reading-highlight').forEach(mark=>mark.replaceWith(document.createTextNode(mark.textContent)));
